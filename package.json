@@ -4,13 +4,13 @@
   "description": "MCP server for generating PlantUML diagrams",
   "author": "mzagar",
   "license": "MIT",
-  "homepage": "https://github.com/mzagar/plantuml-mcp-server#readme",
+  "homepage": "https://github.com/infobip/plantuml-mcp-server#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mzagar/plantuml-mcp-server.git"
+    "url": "git+https://github.com/infobip/plantuml-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/mzagar/plantuml-mcp-server/issues"
+    "url": "https://github.com/infobip/plantuml-mcp-server/issues"
   },
   "type": "module",
   "main": "dist/plantuml-mcp-server.js",
