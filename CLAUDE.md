@@ -15,6 +15,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 - `make test-mcp` - Test using mcptools CLI with sample PlantUML diagrams (comprehensive test including C4 diagrams)
 - `make test` - Test server functionality with background process
+- `make test-ci` - Fast CI tests without external dependencies (TypeScript compilation, tool registration validation)
+
+### Release Management
+- `make release-patch` - Create patch release (e.g., 0.1.0 → 0.1.1) with automated CI testing, version bump, git tagging, and npm publishing
+- `make release-minor` - Create minor release (e.g., 0.1.0 → 0.2.0) with full release workflow
+- `make release-major` - Create major release (e.g., 0.1.0 → 2.0.0) with full release workflow
+
+**Release Workflow:**
+1. Ensures working directory is clean (no uncommitted changes)
+2. Runs comprehensive CI tests (`make test-ci`)
+3. Updates package.json version using `npm version`
+4. Creates git tag and pushes to repository with `git push --follow-tags`
+5. Publishes to npm registry with `npm publish`
 
 ### Setup and Installation
 - `make install` - Install npm dependencies with Node.js version check
