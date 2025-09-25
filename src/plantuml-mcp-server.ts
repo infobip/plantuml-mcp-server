@@ -419,14 +419,21 @@ export default function createServer({ config }: { config?: { plantumlServerUrl?
 }
 
 // CLI execution for backward compatibility
-// Check if this file is being run directly (not imported)
-const isMainModule = process.argv[1] && (
-  import.meta.url === `file://${process.argv[1]}` ||
-  import.meta.url.endsWith(process.argv[1]) ||
-  process.argv[1].endsWith('plantuml-mcp-server.js')
-);
+import { realpathSync } from "fs";
+import { pathToFileURL } from "url";
 
-if (isMainModule) {
+function wasCalledAsScript() {
+  // We use realpathSync to resolve symlinks, as cli scripts will often
+  // be executed from symlinks in the `node_modules/.bin`-folder
+  const realPath = realpathSync(process.argv[1]);
+
+  // Convert the file-path to a file-url before comparing it
+  const realPathAsUrl = pathToFileURL(realPath).href;
+
+  return import.meta.url === realPathAsUrl;
+}
+
+if (wasCalledAsScript()) {
   const server = new PlantUMLMCPServer();
   server.run().catch(console.error);
 }
