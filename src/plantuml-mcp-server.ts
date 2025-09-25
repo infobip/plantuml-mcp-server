@@ -401,7 +401,25 @@ return result; // Success
     await this.server.connect(transport);
     console.error('PlantUML MCP server running on stdio');
   }
+
+  getServer() {
+    return this.server;
+  }
 }
 
-const server = new PlantUMLMCPServer();
-server.run().catch(console.error);
+// Export createServer function for Smithery.ai
+export default function createServer({ config }: { config?: { plantumlServerUrl?: string } } = {}) {
+  // Set environment variable if provided in config
+  if (config?.plantumlServerUrl) {
+    process.env.PLANTUML_SERVER_URL = config.plantumlServerUrl;
+  }
+
+  const mcpServer = new PlantUMLMCPServer();
+  return mcpServer.getServer();
+}
+
+// CLI execution for backward compatibility
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const server = new PlantUMLMCPServer();
+  server.run().catch(console.error);
+}
