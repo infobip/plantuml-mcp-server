@@ -419,7 +419,14 @@ export default function createServer({ config }: { config?: { plantumlServerUrl?
 }
 
 // CLI execution for backward compatibility
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if this file is being run directly (not imported)
+const isMainModule = process.argv[1] && (
+  import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url.endsWith(process.argv[1]) ||
+  process.argv[1].endsWith('plantuml-mcp-server.js')
+);
+
+if (isMainModule) {
   const server = new PlantUMLMCPServer();
   server.run().catch(console.error);
 }
