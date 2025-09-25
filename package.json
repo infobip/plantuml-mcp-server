@@ -1,6 +1,6 @@
 {
   "name": "plantuml-mcp-server",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "MCP server for generating PlantUML diagrams",
   "author": "mzagar",
   "license": "MIT",
