@@ -9,6 +9,8 @@ import {
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import plantumlEncoder from 'plantuml-encoder';
+import { writeFile, mkdir } from 'fs/promises';
+import { dirname, resolve, extname } from 'path';
 
 function encodePlantUML(plantuml: string): string {
   return plantumlEncoder.encode(plantuml);
@@ -43,7 +45,7 @@ class PlantUMLMCPServer {
       tools: [
         {
           name: 'generate_plantuml_diagram',
-          description: 'Generate a PlantUML diagram with automatic syntax validation and error reporting for auto-fix workflows. Returns embeddable image URLs for valid diagrams or structured error details for invalid syntax that can be automatically corrected.',
+          description: 'Generate a PlantUML diagram with automatic syntax validation and error reporting for auto-fix workflows. Returns embeddable image URLs for valid diagrams or structured error details for invalid syntax that can be automatically corrected. Optionally saves the diagram to a local file.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -56,6 +58,10 @@ class PlantUMLMCPServer {
                 enum: ['svg', 'png'],
                 default: 'svg',
                 description: 'Output image format (SVG or PNG)',
+              },
+              output_path: {
+                type: 'string',
+                description: 'Optional. Full path to save the diagram file locally (e.g., "./diagrams/class-diagram.svg"). When provided, the diagram will be downloaded and saved to this path. The directory will be created if it does not exist. If the path does not include a file extension, the format extension will be appended automatically.',
               },
             },
             required: ['plantuml_code'],
@@ -145,7 +151,7 @@ class PlantUMLMCPServer {
   }
 
   private async generateDiagram(args: any) {
-    const { plantuml_code, format = 'svg' } = args;
+    const { plantuml_code, format = 'svg', output_path } = args;
 
     if (!plantuml_code) {
       throw new Error('plantuml_code is required');
@@ -157,7 +163,7 @@ class PlantUMLMCPServer {
 
       // Validate PlantUML syntax first
       const validation = await this.validatePlantUMLSyntax(encoded, plantuml_code);
-      
+
       if (!validation.isValid && validation.error) {
         // Return structured error for Claude Code to auto-fix
         return {
@@ -188,6 +194,58 @@ class PlantUMLMCPServer {
       const response = await fetch(diagramUrl);
       if (!response.ok) {
         throw new Error(`PlantUML server returned ${response.status}: ${response.statusText}`);
+      }
+
+      // If output_path is provided, save the file locally
+      if (output_path) {
+        try {
+          // Resolve the output path and ensure proper extension
+          let filePath = resolve(output_path);
+          const fileExtension = extname(filePath).toLowerCase();
+
+          // Add format extension if not present or mismatched
+          if (!fileExtension || (fileExtension !== `.${format}`)) {
+            if (!fileExtension) {
+              filePath = `${filePath}.${format}`;
+            }
+          }
+
+          // Create directory if it doesn't exist
+          const dir = dirname(filePath);
+          await mkdir(dir, { recursive: true });
+
+          // Get the image data from response
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          // Write the file
+          await writeFile(filePath, buffer);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  success: true,
+                  local_path: filePath,
+                  format: format,
+                  url: diagramUrl,
+                  message: `Diagram saved successfully to: ${filePath}`
+                }, null, 2)
+              },
+            ],
+          };
+        } catch (fileError) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error saving diagram to file: ${fileError instanceof Error ? fileError.message : String(fileError)}\n\nDiagram URL is still available: ${diagramUrl}`,
+              },
+            ],
+            isError: true,
+          };
+        }
       }
 
       return {
