@@ -11,6 +11,10 @@ import {
 import plantumlEncoder from 'plantuml-encoder';
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, extname } from 'path';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { version: PACKAGE_VERSION } = require('../package.json');
 
 function encodePlantUML(plantuml: string): string {
   return plantumlEncoder.encode(plantuml);
@@ -27,14 +31,18 @@ class PlantUMLMCPServer {
   private server: Server;
 
   constructor() {
-    this.server = new Server({
-      name: 'plantuml-server',
-      version: '0.1.0',
-      capabilities: {
-        tools: {},
-        prompts: {},
+    this.server = new Server(
+      {
+        name: 'plantuml-server',
+        version: PACKAGE_VERSION,
       },
-    });
+      {
+        capabilities: {
+          tools: {},
+          prompts: {},
+        },
+      }
+    );
 
     this.setupToolHandlers();
     this.setupPromptHandlers();
