@@ -10,11 +10,49 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import plantumlEncoder from 'plantuml-encoder';
 import { writeFile, mkdir } from 'fs/promises';
-import { dirname, resolve, extname } from 'path';
+import { dirname, resolve, extname, normalize } from 'path';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const { version: PACKAGE_VERSION } = require('../package.json');
+
+// Security: Validate output path is within allowed directories
+export function isPathAllowed(filePath: string): { allowed: boolean; reason?: string } {
+  const resolvedPath = normalize(resolve(filePath));
+
+  // Check extension
+  const ext = extname(resolvedPath).toLowerCase();
+  if (ext !== '.svg' && ext !== '.png') {
+    return {
+      allowed: false,
+      reason: `Invalid extension "${ext || '(none)'}". Only .svg and .png are allowed.`
+    };
+  }
+
+  // Build allowed directories list (CWD always included)
+  const allowedDirs: string[] = [normalize(resolve(process.cwd()))];
+  const envDirs = process.env.PLANTUML_ALLOWED_DIRS;
+  if (envDirs) {
+    const extraDirs = envDirs
+      .split(':')
+      .map(d => d.trim())
+      .filter(Boolean)
+      .map(d => normalize(resolve(d)));
+    allowedDirs.push(...extraDirs);
+  }
+
+  // Check if path is under any allowed directory
+  for (const dir of allowedDirs) {
+    if (resolvedPath === dir || resolvedPath.startsWith(dir + '/')) {
+      return { allowed: true };
+    }
+  }
+
+  return {
+    allowed: false,
+    reason: `Path "${resolvedPath}" is outside allowed directories. Allowed: ${allowedDirs.join(', ')}`
+  };
+}
 
 function encodePlantUML(plantuml: string): string {
   return plantumlEncoder.encode(plantuml);
@@ -69,7 +107,7 @@ class PlantUMLMCPServer {
               },
               output_path: {
                 type: 'string',
-                description: 'Optional. Full path to save the diagram file locally (e.g., "./diagrams/class-diagram.svg"). When provided, the diagram will be downloaded and saved to this path. The directory will be created if it does not exist. If the path does not include a file extension, the format extension will be appended automatically.',
+                description: 'Optional. Path to save diagram locally. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated) to allow additional directories. Only .svg and .png extensions permitted.',
               },
             },
             required: ['plantuml_code'],
@@ -216,6 +254,15 @@ class PlantUMLMCPServer {
             if (!fileExtension) {
               filePath = `${filePath}.${format}`;
             }
+          }
+
+          // Security: Validate path is within allowed directories
+          const pathCheck = isPathAllowed(filePath);
+          if (!pathCheck.allowed) {
+            return {
+              content: [{ type: 'text', text: `Security error: ${pathCheck.reason}` }],
+              isError: true,
+            };
           }
 
           // Create directory if it doesn't exist
