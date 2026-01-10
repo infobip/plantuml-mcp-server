@@ -20,7 +20,7 @@ const { version: PACKAGE_VERSION } = require('../package.json');
 export function isPathAllowed(filePath: string): { allowed: boolean; reason?: string } {
   const resolvedPath = normalize(resolve(filePath));
 
-  // Check extension
+  // Check extension (always enforced, even in wildcard mode)
   const ext = extname(resolvedPath).toLowerCase();
   if (ext !== '.svg' && ext !== '.png') {
     return {
@@ -29,9 +29,15 @@ export function isPathAllowed(filePath: string): { allowed: boolean; reason?: st
     };
   }
 
+  const envDirs = process.env.PLANTUML_ALLOWED_DIRS;
+
+  // Wildcard mode: allow any directory (extension still enforced above)
+  if (envDirs === '*') {
+    return { allowed: true };
+  }
+
   // Build allowed directories list (CWD always included)
   const allowedDirs: string[] = [normalize(resolve(process.cwd()))];
-  const envDirs = process.env.PLANTUML_ALLOWED_DIRS;
   if (envDirs) {
     const extraDirs = envDirs
       .split(':')
@@ -107,7 +113,7 @@ class PlantUMLMCPServer {
               },
               output_path: {
                 type: 'string',
-                description: 'Optional. Path to save diagram locally. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated) to allow additional directories. Only .svg and .png extensions permitted.',
+                description: 'Optional. Path to save diagram locally. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated paths, or "*" for unrestricted) to allow additional directories. Only .svg and .png extensions permitted.',
               },
             },
             required: ['plantuml_code'],

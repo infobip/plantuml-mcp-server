@@ -306,6 +306,19 @@ describe('Path Security Validation', () => {
       const result = isPathAllowed('/etc/diagram.svg');
       expect(result.allowed).toBe(false);
     });
+
+    it('should allow any directory when set to wildcard (*)', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '*';
+      expect(isPathAllowed('/etc/diagram.svg').allowed).toBe(true);
+      expect(isPathAllowed('/any/path/diagram.png').allowed).toBe(true);
+    });
+
+    it('should still enforce extension check in wildcard mode', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '*';
+      const result = isPathAllowed('/etc/malware.exe');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('Invalid extension');
+    });
   });
 
   describe('Edge cases', () => {
