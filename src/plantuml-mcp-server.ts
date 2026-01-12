@@ -13,8 +13,16 @@ import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, extname, normalize } from 'path';
 import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const { version: PACKAGE_VERSION } = require('../package.json');
+// Version reading with CJS compatibility (Smithery builds to CJS where import.meta.url is undefined)
+let PACKAGE_VERSION = '0.2.0'; // fallback for CJS context
+try {
+  if (typeof import.meta?.url === 'string') {
+    const require = createRequire(import.meta.url);
+    PACKAGE_VERSION = require('../package.json').version;
+  }
+} catch {
+  // Use fallback version in CJS context
+}
 
 // Security: Validate output path is within allowed directories
 export function isPathAllowed(filePath: string): { allowed: boolean; reason?: string } {
@@ -542,6 +550,11 @@ import { realpathSync } from "fs";
 import { pathToFileURL } from "url";
 
 function wasCalledAsScript() {
+  // In CJS context (e.g., Smithery build), import.meta.url is undefined
+  if (typeof import.meta?.url !== 'string') {
+    return false;
+  }
+
   // We use realpathSync to resolve symlinks, as cli scripts will often
   // be executed from symlinks in the `node_modules/.bin`-folder
   const realPath = realpathSync(process.argv[1]);
