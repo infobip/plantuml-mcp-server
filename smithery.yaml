@@ -1,8 +1,1 @@
-startCommand:
-  type: stdio
-  configSchema:
-    type: object
-    properties: {}
-  commandFunction: |-
-    (config) => ({ command: 'node', args: ['./dist/plantuml-mcp-server.js'] })
-  exampleConfig: {}
+runtime: "typescript"
