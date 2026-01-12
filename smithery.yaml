@@ -1,3 +1,5 @@
+runtime: "typescript"
+
 startCommand:
   type: stdio
   configSchema:
