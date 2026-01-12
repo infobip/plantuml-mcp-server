@@ -24,7 +24,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && npx -y @smithery/cli@latest build",
+    "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/plantuml-mcp-server.js",
     "test": "vitest run",
