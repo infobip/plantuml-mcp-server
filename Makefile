@@ -136,6 +136,18 @@ test-mcp: build-executable
 	@echo ""
 	@echo "🔍 Testing plantuml_error_handling prompt:"
 	@mcp get-prompt plantuml_error_handling -f pretty node $(DIST_DIR)/$(MAIN_FILE).js
+	@echo ""
+	@echo "🔒 Testing output_path security (save to CWD - should succeed):"
+	@rm -f ./test-output-mcp.svg
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test-output-mcp.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@test -f ./test-output-mcp.svg && echo "✅ File created successfully" || echo "❌ File not created"
+	@rm -f ./test-output-mcp.svg
+	@echo ""
+	@echo "🔒 Testing output_path security (outside CWD - should fail):"
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"/tmp/outside-cwd.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Security error" && echo "✅ Path outside CWD correctly rejected" || echo "❌ Security check failed"
+	@echo ""
+	@echo "🔒 Testing output_path security (invalid extension - should fail):"
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test.txt"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Invalid extension" && echo "✅ Invalid extension correctly rejected" || echo "❌ Extension check failed"
 
 # Setup for Claude Code using CLI command
 setup-claude:

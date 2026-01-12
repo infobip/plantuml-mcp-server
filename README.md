@@ -4,7 +4,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that p
 
 ### Available Tools
 
-1. **`generate_plantuml_diagram`** - Generate diagrams and get embeddable URLs (SVG/PNG)
+1. **`generate_plantuml_diagram`** - Generate diagrams and get embeddable URLs (SVG/PNG), optionally save locally
 2. **`encode_plantuml`** - Encode PlantUML code for URL sharing
 3. **`decode_plantuml`** - Decode PlantUML from encoded strings
 
@@ -60,6 +60,22 @@ After setup, you can ask Claude to:
 - **Create sequence diagrams, class diagrams, architecture diagrams** 
 - **Use advanced PlantUML features** like `!include` directives and external libraries
 - **Encode/decode PlantUML** for URL sharing
+- **Save diagrams locally** with secure path restrictions
+
+### Saving Diagrams Locally
+
+The `generate_plantuml_diagram` tool supports saving diagrams to local files via the `output_path` parameter.
+
+**Security:** By default, files can only be saved within the current working directory. Only `.svg` and `.png` extensions are allowed.
+
+To allow additional directories, set the `PLANTUML_ALLOWED_DIRS` environment variable:
+```bash
+# Allow specific directories (colon-separated)
+PLANTUML_ALLOWED_DIRS=/home/user/diagrams:/tmp/output
+
+# Allow any directory (use with caution)
+PLANTUML_ALLOWED_DIRS=*
+```
 
 ---
 
@@ -141,13 +157,10 @@ make help         # Show all available commands
 
 ### Environment Variables
 
-```bash
-# Optional: Use custom PlantUML server
-export PLANTUML_SERVER_URL=https://your-server.com/plantuml
-
-# Then run any command
-make test-mcp
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PLANTUML_SERVER_URL` | PlantUML server URL | `https://www.plantuml.com/plantuml` |
+| `PLANTUML_ALLOWED_DIRS` | Additional directories for `output_path` (colon-separated, or `*` for any) | CWD only |
 
 ## License
 

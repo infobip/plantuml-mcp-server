@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { isPathAllowed } from './plantuml-mcp-server.js';
 import { existsSync, unlinkSync, rmdirSync } from 'fs';
 import { resolve } from 'path';
 import plantumlEncoder from 'plantuml-encoder';
@@ -215,5 +216,123 @@ describe('Path Extension Handling', () => {
     }
 
     expect(filePath).toBe('diagram.svg');
+  });
+});
+
+describe('Path Security Validation', () => {
+  describe('Extension validation', () => {
+    it('should allow .svg extension', () => {
+      expect(isPathAllowed('./diagram.svg').allowed).toBe(true);
+    });
+
+    it('should allow .png extension', () => {
+      expect(isPathAllowed('./diagram.png').allowed).toBe(true);
+    });
+
+    it('should reject .txt extension', () => {
+      const result = isPathAllowed('./diagram.txt');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('Invalid extension');
+    });
+
+    it('should reject no extension', () => {
+      const result = isPathAllowed('./diagram');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('Invalid extension');
+    });
+
+    it('should reject .exe extension', () => {
+      const result = isPathAllowed('./malware.exe');
+      expect(result.allowed).toBe(false);
+    });
+  });
+
+  describe('Directory restriction (CWD)', () => {
+    it('should allow path within CWD', () => {
+      expect(isPathAllowed('./output/diagram.svg').allowed).toBe(true);
+    });
+
+    it('should allow nested path within CWD', () => {
+      expect(isPathAllowed('./deep/nested/path/diagram.png').allowed).toBe(true);
+    });
+
+    it('should reject path outside CWD via traversal', () => {
+      const result = isPathAllowed('../../../etc/diagram.svg');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('outside allowed directories');
+    });
+
+    it('should reject absolute path outside CWD', () => {
+      const result = isPathAllowed('/etc/diagram.svg');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('outside allowed directories');
+    });
+  });
+
+  describe('PLANTUML_ALLOWED_DIRS env var', () => {
+    const originalEnv = process.env.PLANTUML_ALLOWED_DIRS;
+
+    afterEach(() => {
+      if (originalEnv === undefined) {
+        delete process.env.PLANTUML_ALLOWED_DIRS;
+      } else {
+        process.env.PLANTUML_ALLOWED_DIRS = originalEnv;
+      }
+    });
+
+    it('should allow path in env-specified directory', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '/tmp';
+      expect(isPathAllowed('/tmp/diagram.svg').allowed).toBe(true);
+    });
+
+    it('should allow nested path in env-specified directory', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '/tmp';
+      expect(isPathAllowed('/tmp/nested/deep/diagram.png').allowed).toBe(true);
+    });
+
+    it('should support multiple colon-separated directories', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '/tmp:/home/user/diagrams';
+      expect(isPathAllowed('/tmp/diagram.svg').allowed).toBe(true);
+      expect(isPathAllowed('/home/user/diagrams/test.png').allowed).toBe(true);
+    });
+
+    it('should still allow CWD when env var is set', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '/tmp';
+      expect(isPathAllowed('./diagram.svg').allowed).toBe(true);
+    });
+
+    it('should reject path not in env dirs and not in CWD', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '/tmp';
+      const result = isPathAllowed('/etc/diagram.svg');
+      expect(result.allowed).toBe(false);
+    });
+
+    it('should allow any directory when set to wildcard (*)', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '*';
+      expect(isPathAllowed('/etc/diagram.svg').allowed).toBe(true);
+      expect(isPathAllowed('/any/path/diagram.png').allowed).toBe(true);
+    });
+
+    it('should still enforce extension check in wildcard mode', () => {
+      process.env.PLANTUML_ALLOWED_DIRS = '*';
+      const result = isPathAllowed('/etc/malware.exe');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('Invalid extension');
+    });
+  });
+
+  describe('Edge cases', () => {
+    it('should handle paths with spaces', () => {
+      expect(isPathAllowed('./my diagrams/test.svg').allowed).toBe(true);
+    });
+
+    it('should normalize paths with redundant separators', () => {
+      expect(isPathAllowed('.//output///diagram.svg').allowed).toBe(true);
+    });
+
+    it('should handle uppercase extensions', () => {
+      expect(isPathAllowed('./diagram.SVG').allowed).toBe(true);
+      expect(isPathAllowed('./diagram.PNG').allowed).toBe(true);
+    });
   });
 });
