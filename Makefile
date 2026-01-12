@@ -114,40 +114,40 @@ release-major:
 test-mcp: build-executable
 	@echo "🧪 Testing with mcptools CLI..."
 	@echo "📋 Listing available tools:"
-	@mcp tools node $(DIST_DIR)/$(MAIN_FILE).js
+	@mcpt tools node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "🔧 Testing encode_plantuml tool:"
-	@mcp call encode_plantuml --params '{"plantuml_code":"@startuml\nAlice -> Bob: Hello\n@enduml"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@mcpt call encode_plantuml --params '{"plantuml_code":"@startuml\nAlice -> Bob: Hello\n@enduml"}' node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "📊 Testing generate_plantuml_diagram tool:"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Hello\nBob --> Alice: Hi there\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Hello\nBob --> Alice: Hi there\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "🔗 Testing generate_plantuml_diagram with !include directive:"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml\n\nPerson(user, \"User\")\nContainer(web, \"Web App\", \"React\", \"User interface\")\nContainer(api, \"API\", \"Node.js\", \"Backend API\")\n\nRel(user, web, \"Uses\")\nRel(web, api, \"Calls\")\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml\n\nPerson(user, \"User\")\nContainer(web, \"Web App\", \"React\", \"User interface\")\nContainer(api, \"API\", \"Node.js\", \"Backend API\")\n\nRel(user, web, \"Uses\")\nRel(web, api, \"Calls\")\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "❌ Testing syntax error validation (auto-fix workflow):"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nBob -> Alice : Hello\nasd\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nBob -> Alice : Hello\nasd\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "🔓 Testing decode_plantuml tool:"
-	@mcp call decode_plantuml --params '{"encoded_string":"LOqnQyCm48Lt_GfLKmoEjMJgbDHJ8IacO3gMitHjrCedeJkHlr-KX4AtuxlllRTdWI9rZUefa8lLexw8P7wsji1r-0fogKjbB2wH8CdWqcfp16gPBOkFOR7ZRZirD9-ETWKMB7RSVOo9109X6NBhLnCMJhHfPRqsCsCndVgJDbTSUctUST67d4slpHd1YNceEf1W-GI7_qAGGw_DONfjtbloE7npEr_0_I1vtJwTKcUCZztxoip8fhlX6xZNZ11ZmtiaNzVu2m00"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@mcpt call decode_plantuml --params '{"encoded_string":"LOqnQyCm48Lt_GfLKmoEjMJgbDHJ8IacO3gMitHjrCedeJkHlr-KX4AtuxlllRTdWI9rZUefa8lLexw8P7wsji1r-0fogKjbB2wH8CdWqcfp16gPBOkFOR7ZRZirD9-ETWKMB7RSVOo9109X6NBhLnCMJhHfPRqsCsCndVgJDbTSUctUST67d4slpHd1YNceEf1W-GI7_qAGGw_DONfjtbloE7npEr_0_I1vtJwTKcUCZztxoip8fhlX6xZNZ11ZmtiaNzVu2m00"}' node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "📚 Listing available prompts:"
-	@mcp prompts node $(DIST_DIR)/$(MAIN_FILE).js
+	@mcpt prompts node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "🔍 Testing plantuml_error_handling prompt:"
-	@mcp get-prompt plantuml_error_handling -f pretty node $(DIST_DIR)/$(MAIN_FILE).js
+	@mcpt get-prompt plantuml_error_handling -f pretty node $(DIST_DIR)/$(MAIN_FILE).js
 	@echo ""
 	@echo "🔒 Testing output_path security (save to CWD - should succeed):"
 	@rm -f ./test-output-mcp.svg
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test-output-mcp.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test-output-mcp.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
 	@test -f ./test-output-mcp.svg && echo "✅ File created successfully" || echo "❌ File not created"
 	@rm -f ./test-output-mcp.svg
 	@echo ""
 	@echo "🔒 Testing output_path security (outside CWD - should fail):"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"/tmp/outside-cwd.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Security error" && echo "✅ Path outside CWD correctly rejected" || echo "❌ Security check failed"
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"/tmp/outside-cwd.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Security error" && echo "✅ Path outside CWD correctly rejected" || echo "❌ Security check failed"
 	@echo ""
 	@echo "🔒 Testing output_path security (invalid extension - should fail):"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcp call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test.txt"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Invalid extension" && echo "✅ Invalid extension correctly rejected" || echo "❌ Extension check failed"
+	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test.txt"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Invalid extension" && echo "✅ Invalid extension correctly rejected" || echo "❌ Extension check failed"
 
 # Setup for Claude Code using CLI command
 setup-claude:
