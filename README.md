@@ -1,5 +1,7 @@
 # PlantUML MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@infobip/plantuml-mcp-server)](https://smithery.ai/server/@infobip/plantuml-mcp-server)
+
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that provides PlantUML diagram generation capabilities for Claude Desktop and Claude Code.
 
 ### Available Tools
@@ -97,9 +99,6 @@ PLANTUML_ALLOWED_DIRS=*
 ```
 
 ![PlantUML MCP Server Architecture](https://www.plantuml.com/plantuml/png/XLHDZzem4BtxLups50wKGwiU8b4j0aehmIhYwuI4J3m4guwTscDMjEf_hnoJyB5BUujddcVUUpFnioDkoPUAaII5a2ckQJMRmcoOmGBj4IrqOM3pWoJCoLk4hygyCiPpCXQULWxj4t07uODLt9BCPSKrmTDGSIyGHkX-aAbgK0pTmjxfM6Ddm-nzu8VSb3MY2J3MxpTSlsj9aYlvYvCq6lfzTgRH_H8gfh08UgzwRNJYI4W3PBbsbR7KOI7RuDk226ICSkb6Tw50ZPOJRgj0mPTgAoGlB2z34dLkn2KLGW9lGZNXKRm1arWhi0tE1ih1oq0WKazXZZyzEheCvzpjNjj3MaaR23nk1KQwJUca1coqTr8Na7j7femGgOlcNWDEuTjocS5alDpeNjEYvuv5xtUiAlwmbdCxWFMauG-24s-ANiIIjngmtA4GVASGLlFfbT9WJWeZwIh5JwqJmT7ncUP37sl0rOw7qxs7TzFxbtE3gbAdIxN6fVIo19y_9PrmubM5MdpSdGXTZ9ppEqb9vv43qK9mP8Ftzmui3kQrnLXqNb7SA_oF2pNWoeKtzMjnTokRd3jj8_hMY3aUqJfi7O3AcXoTUo3CM5b8pTN3GLm9Z3J4PSxQ48ALnO70xEj70ff_VsZqNXO-_amf0-X2DXsyB5UpwNOndg_7ysrOfH0VuPvxHIaq-iAZKcU6joiFN1N6IZh4x68zwMKl4zWRMt82vwlmOZ3K0W8nnfvH2r-glm00)
-
-
-
 
 
 ### OAuth2 Authorization Code Flow Diagram
