@@ -130,29 +130,11 @@ make setup
 ### Development Commands
 
 ```bash
-# Building & Running
-make build        # Clean build TypeScript to JavaScript
-make dev          # Development mode with watch
-make run          # Build and run the server locally
+# Show all available commands
+make help
 
-# Testing
-make test         # Basic server functionality test
-make test-mcp     # Comprehensive testing with mcptools CLI
-make test-ci      # Fast CI tests (no external dependencies)
-
-# Setup & Installation  
-make install      # Install npm dependencies
-make setup        # Full setup (install + build + Claude Code config)
-make setup-claude # Show Claude Code MCP configuration instructions
-
-# Release Management
-make release-patch  # Create patch release (0.1.0 → 0.1.1)
-make release-minor  # Create minor release (0.1.0 → 0.2.0) 
-make release-major  # Create major release (0.1.0 → 2.0.0)
-
-# Utilities
-make clean        # Clean build directory
-make help         # Show all available commands
+# Build and run all tests
+make clean build test-all
 ```
 
 ### Environment Variables
