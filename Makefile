@@ -31,7 +31,7 @@ clean:
 # Build the project
 build: check-node clean
 	@echo "🔨 Building TypeScript project..."
-	npx tsc
+	npm run build
 	@echo "✅ Build complete! Output in $(DIST_DIR)/"
 
 # Build and make executable
@@ -42,7 +42,7 @@ build-executable: build
 # Development build with watch mode
 dev: check-node
 	@echo "👀 Starting development build (watch mode)..."
-	npx tsc --watch
+	npm run dev
 
 # Run the server locally
 run: build-executable

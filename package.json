@@ -24,15 +24,15 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npx @smithery/cli build",
-    "build:tsc": "tsc",
-    "dev": "npx @smithery/cli dev",
-    "dev:tsc": "tsc --watch",
+    "build": "tsc",
+    "build:smithery": "npx @smithery/cli build",
+    "dev": "tsc --watch",
+    "dev:smithery": "npx @smithery/cli dev",
     "start": "node dist/plantuml-mcp-server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "tsc"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
