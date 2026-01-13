@@ -177,7 +177,7 @@ class PlantUMLMCPServer {
               },
               output_path: {
                 type: 'string',
-                description: 'Optional. Path to save diagram locally. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated paths, or "*" for unrestricted) to allow additional directories. Only .svg and .png extensions permitted.',
+                description: 'Optional. Path to save diagram locally. Automatically creates all necessary parent directories. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated paths, or "*" for unrestricted) to allow additional directories. Only .svg and .png extensions permitted.',
               },
             },
             required: ['plantuml_code'],
