@@ -63,6 +63,10 @@ test: build-executable
 # Fast CI tests without external dependencies
 test-ci: build-executable
 	@echo "⚡ Running CI-optimized tests..."
+	@echo "🧪 Running unit tests..."
+	npm run test
+	@echo "✅ Unit tests passed"
+	@echo ""
 	@echo "📋 Testing TypeScript compilation..."
 	npx tsc --noEmit
 	@echo "✅ TypeScript compilation successful"
@@ -86,8 +90,8 @@ do-release:
 	@git diff-index --quiet HEAD || (echo "❌ Working directory not clean. Commit changes first." && exit 1)
 	@echo "✅ Working directory clean"
 	@echo ""
-	@echo "⚡ Running CI tests..."
-	$(MAKE) test-ci
+	@echo "⚡ Running all tests..."
+	$(MAKE) test-all
 	@echo ""
 	@echo "📦 Updating version ($(RELEASE_TYPE))..."
 	npm version $(RELEASE_TYPE)
@@ -109,6 +113,11 @@ release-minor:
 
 release-major:
 	$(MAKE) do-release RELEASE_TYPE=major
+
+# Run all tests (CI + integration)
+test-all: test-ci test-mcp
+	@echo ""
+	@echo "🎉 All tests passed! Ready for release."
 
 # Test with mcptools CLI
 test-mcp: build-executable
@@ -192,6 +201,7 @@ help:
 	@echo "  make test           - Test the server"
 	@echo "  make test-ci        - Fast CI tests (no external dependencies)"
 	@echo "  make test-mcp       - Test with mcptools CLI"
+	@echo "  make test-all       - Run all tests (CI + integration)"
 	@echo "  make release-patch  - Create patch release (0.1.0 → 0.1.1)"
 	@echo "  make release-minor  - Create minor release (0.1.0 → 0.2.0)"
 	@echo "  make release-major  - Create major release (0.1.0 → 2.0.0)"
@@ -208,4 +218,4 @@ help:
 	@echo "  make test-mcp"
 	@echo "  PLANTUML_SERVER_URL=https://your-server.com make test-mcp"
 
-.PHONY: help install clean build build-executable dev run test test-ci test-mcp release-patch release-minor release-major setup-claude init setup check-node
+.PHONY: help install clean build build-executable dev run test test-ci test-mcp test-all release-patch release-minor release-major setup-claude init setup check-node

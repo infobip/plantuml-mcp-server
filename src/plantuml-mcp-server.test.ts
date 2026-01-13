@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { isPathAllowed } from './plantuml-mcp-server.js';
+import { isPathAllowed, encodePlantUML, decodePlantUML } from './plantuml-mcp-server.js';
 import { existsSync, unlinkSync, rmdirSync } from 'fs';
 import { resolve } from 'path';
-import plantumlEncoder from 'plantuml-encoder';
 
 // Test utilities
 const PLANTUML_SERVER_URL = 'https://www.plantuml.com/plantuml';
@@ -42,35 +41,35 @@ function cleanupTestFiles(files: string[]) {
 
 describe('PlantUML Encoder', () => {
   it('should encode PlantUML code', () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     expect(encoded).toBeDefined();
     expect(typeof encoded).toBe('string');
     expect(encoded.length).toBeGreaterThan(0);
   });
 
   it('should decode PlantUML code', () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
-    const decoded = plantumlEncoder.decode(encoded);
+    const encoded = encodePlantUML(simpleDiagram);
+    const decoded = decodePlantUML(encoded);
     expect(decoded).toBe(simpleDiagram);
   });
 
   it('should produce consistent encoding', () => {
-    const encoded1 = plantumlEncoder.encode(simpleDiagram);
-    const encoded2 = plantumlEncoder.encode(simpleDiagram);
+    const encoded1 = encodePlantUML(simpleDiagram);
+    const encoded2 = encodePlantUML(simpleDiagram);
     expect(encoded1).toBe(encoded2);
   });
 });
 
 describe('PlantUML URL Generation', () => {
   it('should generate valid SVG URL', () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/svg/${encoded}`;
     expect(url).toContain('/svg/');
     expect(url).toContain(encoded);
   });
 
   it('should generate valid PNG URL', () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/png/${encoded}`;
     expect(url).toContain('/png/');
     expect(url).toContain(encoded);
@@ -79,7 +78,7 @@ describe('PlantUML URL Generation', () => {
 
 describe('PlantUML Server Accessibility', () => {
   it('should fetch SVG diagram from server', async () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/svg/${encoded}`;
 
     const response = await fetch(url);
@@ -88,7 +87,7 @@ describe('PlantUML Server Accessibility', () => {
   });
 
   it('should fetch PNG diagram from server', async () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/png/${encoded}`;
 
     const response = await fetch(url);
@@ -104,7 +103,7 @@ Bob -> Alice : Hello
 invalid_syntax_here
 @enduml`;
 
-    const encoded = plantumlEncoder.encode(invalidDiagram);
+    const encoded = encodePlantUML(invalidDiagram);
     const url = `${PLANTUML_SERVER_URL}/txt/${encoded}`;
 
     const response = await fetch(url);
@@ -115,7 +114,7 @@ invalid_syntax_here
   });
 
   it('should not have error header for valid diagram', async () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/txt/${encoded}`;
 
     const response = await fetch(url);
@@ -133,7 +132,7 @@ describe('Local File Saving', () => {
   });
 
   it('should save SVG file locally', async () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/svg/${encoded}`;
     const filePath = resolve(`${TEST_OUTPUT_DIR}/test-save.svg`);
     testFiles.push(filePath);
@@ -152,7 +151,7 @@ describe('Local File Saving', () => {
   });
 
   it('should save PNG file locally', async () => {
-    const encoded = plantumlEncoder.encode(classDiagram);
+    const encoded = encodePlantUML(classDiagram);
     const url = `${PLANTUML_SERVER_URL}/png/${encoded}`;
     const filePath = resolve(`${TEST_OUTPUT_DIR}/test-save.png`);
     testFiles.push(filePath);
@@ -171,7 +170,7 @@ describe('Local File Saving', () => {
   });
 
   it('should create nested directories', async () => {
-    const encoded = plantumlEncoder.encode(simpleDiagram);
+    const encoded = encodePlantUML(simpleDiagram);
     const url = `${PLANTUML_SERVER_URL}/svg/${encoded}`;
     const filePath = resolve(`${TEST_OUTPUT_DIR}/nested/deep/diagram.svg`);
     testFiles.push(filePath);
