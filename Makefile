@@ -99,10 +99,8 @@ do-release:
 	@echo "📤 Pushing to GitHub with tags..."
 	git push --follow-tags
 	@echo ""
-	@echo "🚀 Publishing to npm..."
-	npm publish
-	@echo ""
-	@echo "🎉 $(RELEASE_TYPE) release completed successfully!"
+	@echo "🎉 $(RELEASE_TYPE) release tagged and pushed to GitHub!"
+	@echo "📦 To publish to npm, run: make npm-publish"
 
 # Release targets
 release-patch:
@@ -113,6 +111,15 @@ release-minor:
 
 release-major:
 	$(MAKE) do-release RELEASE_TYPE=major
+
+# Publish current version to npm
+npm-publish:
+	@echo "📦 Publishing to npm..."
+	@echo "⚠️  This will publish version $(shell node -p "require('./package.json').version") to npm"
+	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@read confirm
+	npm publish
+	@echo "🎉 Published to npm successfully!"
 
 # Run all tests (CI + integration)
 test-all: test-ci test-mcp
@@ -205,6 +212,7 @@ help:
 	@echo "  make release-patch  - Create patch release (0.1.0 → 0.1.1)"
 	@echo "  make release-minor  - Create minor release (0.1.0 → 0.2.0)"
 	@echo "  make release-major  - Create major release (0.1.0 → 2.0.0)"
+	@echo "  make npm-publish    - Publish current version to npm (manual confirmation)"
 	@echo "  make clean          - Clean build directory"
 	@echo "  make setup          - Full setup (install + build + instructions)"
 	@echo "  make setup-claude   - Show Claude Code setup instructions"
@@ -218,4 +226,4 @@ help:
 	@echo "  make test-mcp"
 	@echo "  PLANTUML_SERVER_URL=https://your-server.com make test-mcp"
 
-.PHONY: help install clean build build-executable dev run test test-ci test-mcp test-all release-patch release-minor release-major setup-claude init setup check-node
+.PHONY: help install clean build build-executable dev run test test-ci test-mcp test-all release-patch release-minor release-major npm-publish setup-claude init setup check-node
