@@ -8,7 +8,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import plantumlEncoder from 'plantuml-encoder';
+import pako from 'pako';
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, extname, normalize } from 'path';
 import { createRequire } from 'module';
@@ -68,12 +68,68 @@ export function isPathAllowed(filePath: string): { allowed: boolean; reason?: st
   };
 }
 
-function encodePlantUML(plantuml: string): string {
-  return plantumlEncoder.encode(plantuml);
+// PlantUML encoding helpers (same algorithm as plantuml-encoder, but using pako directly)
+function encode6bit(b: number): string {
+  if (b < 10) return String.fromCharCode(48 + b);
+  b -= 10;
+  if (b < 26) return String.fromCharCode(65 + b);
+  b -= 26;
+  if (b < 26) return String.fromCharCode(97 + b);
+  b -= 26;
+  if (b === 0) return '-';
+  if (b === 1) return '_';
+  return '?';
 }
 
-function decodePlantUML(encoded: string): string {
-  return plantumlEncoder.decode(encoded);
+function append3bytes(b1: number, b2: number, b3: number): string {
+  const c1 = b1 >> 2;
+  const c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
+  const c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
+  const c4 = b3 & 0x3F;
+  return encode6bit(c1 & 0x3F) + encode6bit(c2 & 0x3F) + encode6bit(c3 & 0x3F) + encode6bit(c4 & 0x3F);
+}
+
+export function encodePlantUML(plantuml: string): string {
+  // Deflate the input using pako (pure JS, no Node.js zlib dependency)
+  const deflated = pako.deflateRaw(plantuml, { level: 9 });
+
+  // Encode to PlantUML's custom base64-like encoding
+  let result = '';
+  for (let i = 0; i < deflated.length; i += 3) {
+    const b1 = deflated[i];
+    const b2 = i + 1 < deflated.length ? deflated[i + 1] : 0;
+    const b3 = i + 2 < deflated.length ? deflated[i + 2] : 0;
+    result += append3bytes(b1, b2, b3);
+  }
+  return result;
+}
+
+function decode6bit(c: string): number {
+  const code = c.charCodeAt(0);
+  if (code >= 48 && code <= 57) return code - 48;        // 0-9
+  if (code >= 65 && code <= 90) return code - 65 + 10;   // A-Z
+  if (code >= 97 && code <= 122) return code - 97 + 36;  // a-z
+  if (c === '-') return 62;
+  if (c === '_') return 63;
+  return 0;
+}
+
+export function decodePlantUML(encoded: string): string {
+  // Decode from PlantUML's custom base64-like encoding
+  const decoded: number[] = [];
+  for (let i = 0; i < encoded.length; i += 4) {
+    const c1 = decode6bit(encoded[i] || '');
+    const c2 = decode6bit(encoded[i + 1] || '');
+    const c3 = decode6bit(encoded[i + 2] || '');
+    const c4 = decode6bit(encoded[i + 3] || '');
+    decoded.push((c1 << 2) | (c2 >> 4));
+    decoded.push(((c2 & 0xF) << 4) | (c3 >> 2));
+    decoded.push(((c3 & 0x3) << 6) | c4);
+  }
+
+  // Inflate using pako (pure JS, no Node.js zlib dependency)
+  const inflated = pako.inflateRaw(new Uint8Array(decoded), { to: 'string' });
+  return inflated;
 }
 
 // Configuration
@@ -121,7 +177,7 @@ class PlantUMLMCPServer {
               },
               output_path: {
                 type: 'string',
-                description: 'Optional. Path to save diagram locally. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated paths, or "*" for unrestricted) to allow additional directories. Only .svg and .png extensions permitted.',
+                description: 'Optional. Path to save diagram locally. Automatically creates all necessary parent directories. Restricted to current working directory by default. Set PLANTUML_ALLOWED_DIRS env var (colon-separated paths, or "*" for unrestricted) to allow additional directories. Only .svg and .png extensions permitted.',
               },
             },
             required: ['plantuml_code'],
@@ -321,7 +377,12 @@ class PlantUMLMCPServer {
         content: [
           {
             type: 'text',
-            text: `Successfully generated PlantUML diagram!\n\n**Embeddable ${format.toUpperCase()} URL:**\n\`\`\`\n${diagramUrl}\n\`\`\`\n\n**Markdown embed:**\n\`\`\`markdown\n![PlantUML Diagram](${diagramUrl})\n\`\`\``,
+            text: JSON.stringify({
+              success: true,
+              url: diagramUrl,
+              format: format,
+              markdown_embed: `![PlantUML Diagram](${diagramUrl})`
+            }, null, 2)
           },
         ],
       };
@@ -352,7 +413,13 @@ class PlantUMLMCPServer {
         content: [
           {
             type: 'text',
-            text: `**Encoded PlantUML:**\n\`\`\`\n${encoded}\n\`\`\`\n\n**Full SVG URL:**\n\`\`\`\n${PLANTUML_SERVER_URL}/svg/${encoded}\n\`\`\`\n\n**Full PNG URL:**\n\`\`\`\n${PLANTUML_SERVER_URL}/png/${encoded}\n\`\`\``,
+            text: JSON.stringify({
+              encoded: encoded,
+              urls: {
+                svg: `${PLANTUML_SERVER_URL}/svg/${encoded}`,
+                png: `${PLANTUML_SERVER_URL}/png/${encoded}`
+              }
+            }, null, 2)
           },
         ],
       };
@@ -383,7 +450,9 @@ class PlantUMLMCPServer {
         content: [
           {
             type: 'text',
-            text: `**Decoded PlantUML:**\n\`\`\`plantuml\n${decoded}\n\`\`\``,
+            text: JSON.stringify({
+              decoded: decoded
+            }, null, 2)
           },
         ],
       };
