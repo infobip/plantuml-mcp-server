@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { isPathAllowed, encodePlantUML, decodePlantUML } from './plantuml-mcp-server.js';
-import { existsSync, unlinkSync, rmdirSync } from 'fs';
+import { existsSync, unlinkSync, rmSync } from 'fs';
 import { resolve } from 'path';
 
 // Test utilities
@@ -32,7 +32,7 @@ function cleanupTestFiles(files: string[]) {
   }
   try {
     if (existsSync(TEST_OUTPUT_DIR)) {
-      rmdirSync(TEST_OUTPUT_DIR, { recursive: true });
+      rmSync(TEST_OUTPUT_DIR, { recursive: true });
     }
   } catch (e) {
     // ignore
