@@ -39,7 +39,7 @@
     "claude"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "pako": "^2.1.0"
   },
   "devDependencies": {
@@ -49,6 +49,6 @@
     "vitest": "^4.0.16"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12.0"
   }
 }

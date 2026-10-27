@@ -114,7 +114,7 @@ PLANTUML_ALLOWED_DIRS=*
 ## Development Setup
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 22.12.0 or later
 - npm
 
 ### Local Installation

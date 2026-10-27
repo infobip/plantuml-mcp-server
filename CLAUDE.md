@@ -64,7 +64,7 @@ The server implements three MCP tools via the `PlantUMLMCPServer` class:
 - Uses `@modelcontextprotocol/sdk` for MCP protocol implementation
 - Uses `plantuml-encoder` library for encoding/decoding (src/plantuml-mcp-server.ts:11-17)
 - `PLANTUML_SERVER_URL` environment variable (defaults to https://www.plantuml.com/plantuml)
-- Requires Node.js 18+ (specified in package.json engines)
+- Requires Node.js 22.12.0 or later (specified in package.json engines)
 - Server runs on stdio transport for MCP communication
 
 ### Development Workflow

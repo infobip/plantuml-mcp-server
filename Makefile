@@ -13,7 +13,7 @@ MAIN_FILE = plantuml-mcp-server
 # Check if Node.js is installed
 check-node:
 	@if [ "$(NODE_VERSION)" = "not found" ]; then \
-		echo "❌ Node.js is not installed. Please install Node.js 18+ first."; \
+		echo "❌ Node.js is not installed. Please install Node.js 22.12.0 or later first."; \
 		exit 1; \
 	fi
 	@echo "✅ Node.js $(NODE_VERSION) found"
