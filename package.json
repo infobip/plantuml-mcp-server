@@ -25,9 +25,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "build:smithery": "npx @smithery/cli build",
     "dev": "tsc --watch",
-    "dev:smithery": "npx @smithery/cli dev",
     "start": "node dist/plantuml-mcp-server.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -45,7 +43,6 @@
     "pako": "^2.1.0"
   },
   "devDependencies": {
-    "@smithery/cli": "^3.1.2",
     "@types/node": "^20.0.0",
     "@types/pako": "^2.0.4",
     "typescript": "^5.0.0",

@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { isPathAllowed, encodePlantUML, decodePlantUML } from './plantuml-mcp-server.js';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import createServer, { isPathAllowed, encodePlantUML, decodePlantUML } from './plantuml-mcp-server.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { existsSync, unlinkSync, rmSync } from 'fs';
 import { resolve } from 'path';
 
@@ -38,6 +39,49 @@ function cleanupTestFiles(files: string[]) {
     // ignore
   }
 }
+
+describe('Programmatic server creation', () => {
+  it('should create an SDK server without starting a transport', async () => {
+    const server = createServer();
+    try {
+      expect(server).toBeInstanceOf(Server);
+      expect(server.transport).toBeUndefined();
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('should create independent servers and accept the existing config shape', async () => {
+    const first = createServer({ config: {} });
+    const second = createServer();
+    try {
+      expect(first).not.toBe(second);
+      expect(first.transport).toBeUndefined();
+      expect(second.transport).toBeUndefined();
+    } finally {
+      await Promise.all([first.close(), second.close()]);
+    }
+  });
+
+  it.each([
+    ['without a script path', [process.execPath]],
+    ['from stdin', [process.execPath, '-']],
+  ])('should allow importing %s without starting the CLI', async (_label, argv) => {
+    const originalArgv = process.argv;
+    const connect = vi.spyOn(Server.prototype, 'connect');
+    try {
+      process.argv = argv;
+      vi.resetModules();
+      const imported = await import('./plantuml-mcp-server.js');
+      expect(typeof imported.default).toBe('function');
+      expect(connect).not.toHaveBeenCalled();
+    } finally {
+      process.argv = originalArgv;
+      connect.mockRestore();
+      vi.resetModules();
+    }
+  });
+});
 
 describe('PlantUML Encoder', () => {
   it('should encode PlantUML code', () => {

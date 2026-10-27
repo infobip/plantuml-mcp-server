@@ -1,7 +1,6 @@
 # PlantUML MCP Server
 
 [![LightNow capabilities](https://lightnow.ai/badge/io.github.infobip/plantuml-mcp-server)](https://lightnow.ai/servers/io.github.infobip/plantuml-mcp-server)
-[![smithery badge](https://smithery.ai/badge/infobip/plantuml-mcp-server)](https://smithery.ai/servers/infobip/plantuml-mcp-server)
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that provides PlantUML diagram generation capabilities for Claude Desktop and Claude Code.
 
@@ -147,3 +146,8 @@ make clean build test-all
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## MCP Registry Listings
+
+- [LightNow](https://lightnow.ai/servers/io.github.infobip/plantuml-mcp-server)
+- [Smithery](https://smithery.ai/servers/infobip/plantuml-mcp-server)

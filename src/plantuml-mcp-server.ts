@@ -13,15 +13,19 @@ import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, extname, normalize } from 'path';
 import { createRequire } from 'module';
 
-// Version reading with CJS compatibility (Smithery builds to CJS where import.meta.url is undefined)
-let PACKAGE_VERSION = '0.2.0'; // fallback for CJS context
+// Read the package version when available, including builds without ESM metadata.
+let PACKAGE_VERSION = 'unknown';
 try {
   if (typeof import.meta?.url === 'string') {
     const require = createRequire(import.meta.url);
-    PACKAGE_VERSION = require('../package.json').version;
+    const version = require('../package.json').version;
+
+    if (typeof version === 'string' && version.trim()) {
+      PACKAGE_VERSION = version;
+    }
   }
 } catch {
-  // Use fallback version in CJS context
+  // Keep 'unknown' when package metadata cannot be loaded.
 }
 
 // Security: Validate output path is within allowed directories
@@ -603,7 +607,7 @@ return result; // Success
   }
 }
 
-// Export createServer function for Smithery.ai
+// Create an MCP server for programmatic use without starting a transport.
 export default function createServer({ config }: { config?: { plantumlServerUrl?: string } } = {}) {
   // Set environment variable if provided in config
   if (config?.plantumlServerUrl) {
@@ -614,13 +618,13 @@ export default function createServer({ config }: { config?: { plantumlServerUrl?
   return mcpServer.getServer();
 }
 
-// CLI execution for backward compatibility
+// Start the stdio transport only when invoked as a CLI.
 import { realpathSync } from "fs";
 import { pathToFileURL } from "url";
 
 function wasCalledAsScript() {
-  // In CJS context (e.g., Smithery build), import.meta.url is undefined
-  if (typeof import.meta?.url !== 'string') {
+  // Imports from node -e or stdin do not have a script path.
+  if (!process.argv[1] || process.argv[1] === '-') {
     return false;
   }
 
