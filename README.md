@@ -136,6 +136,42 @@ make help
 make clean build test-all
 ```
 
+### Local MCP Smoke Test
+
+Test the compiled server in this checkout through [`mcpc`](https://github.com/apify/mcpc):
+
+Requires Node.js 22.12.0 or later, npm, Make, and network access.
+
+```bash
+# Install project dependencies, then build and test the local server
+npm ci --ignore-scripts --no-audit --no-fund --engine-strict
+make test-mcpc
+```
+
+If `mcpc` is missing from `PATH`, the target installs the official Apify CLI with `npm install --global --no-audit --no-fund @apify/mcpc`. It reuses an existing installation without upgrading it and checks `mcpc --version` before testing. The smoke test has been verified with mcpc 0.6.0.
+
+This is a global CLI installation, not a project dependency. It requires permission to write to the npm global prefix. The target never uses `sudo`. If installation fails or the CLI is still not on `PATH`, the test stops with instructions. You can also install it manually with `npm install -g @apify/mcpc`.
+
+`make test-mcp` is an alias. `make test-all` runs the unit/type checks and this MCP test, including the CLI installation check. Running `node scripts/test-mcpc.mjs` directly does not install the CLI.
+
+The test verifies all three tools, the prompt, Unicode roundtrip, diagram URLs, SVG/PNG files, C4 rendering, syntax errors, and output-path restrictions.
+
+It always renders synthetic diagrams through `https://www.plantuml.com/plantuml`, so network access is required. It does not use a published npm server or an existing user session.
+
+The runner creates its own temporary config, private `MCPC_HOME_DIR`, working directory, and output directory. Its `@local` session is isolated from user sessions and closed after success, failure, or interruption. It retains images and `results.json` in the artifact directory printed by the command.
+
+Success ends with `PASS local mcpc smoke test` and exit code 0. Missing prerequisites, network errors, failed assertions, or cleanup failures return a nonzero exit code.
+
+For a trusted corporate CA, run:
+
+```bash
+NODE_EXTRA_CA_CERTS=/absolute/path/to/trusted-ca.pem make test-mcpc
+```
+
+The runner forwards this setting to the server. Do not disable TLS validation. If cleanup fails, use its printed private home: `MCPC_HOME_DIR="<artifact-directory>/mcpc" mcpc close @local`. Do not close sessions in your default mcpc home.
+
+Agent instructions are in [AGENTS.md](AGENTS.md).
+
 ### Environment Variables
 
 | Variable | Description | Default |

@@ -60,28 +60,11 @@ test: build-executable
 	@echo "Server should be running. Check logs above for any errors."
 	@echo "Kill the background process manually if needed: pkill -f 'node $(DIST_DIR)/$(MAIN_FILE).js'"
 
-# Fast CI tests without external dependencies
+# Unit tests and type checks (some tests call the public PlantUML server)
 test-ci: build-executable
-	@echo "⚡ Running CI-optimized tests..."
-	@echo "🧪 Running unit tests..."
-	npm run test
-	@echo "✅ Unit tests passed"
-	@echo ""
-	@echo "📋 Testing TypeScript compilation..."
-	npx tsc --noEmit
-	@echo "✅ TypeScript compilation successful"
-	@echo ""
-	@echo "🔧 Testing tool schema validation..."
-	echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "generate_plantuml_diagram"
-	echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "encode_plantuml"
-	echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "decode_plantuml"
-	@echo "✅ All tools properly registered"
-	@echo ""
-	@echo "📚 Testing prompts registration..."
-	echo '{"jsonrpc":"2.0","method":"prompts/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "plantuml_error_handling"
-	@echo "✅ Prompts properly registered"
-	@echo ""
-	@echo "🎉 All CI tests passed! Ready for deployment."
+	@echo "🧪 Running unit tests and TypeScript checks..."
+	npm test -- src/plantuml-mcp-server.test.ts
+	./node_modules/.bin/tsc --noEmit
 
 # Internal shared release logic
 do-release:
@@ -121,49 +104,33 @@ npm-publish:
 	npm publish
 	@echo "🎉 Published to npm successfully!"
 
-# Run all tests (CI + integration)
-test-all: test-ci test-mcp
+# Run all tests (unit/type checks + local MCP integration)
+test-all: test-ci test-mcpc
 	@echo ""
 	@echo "🎉 All tests passed! Ready for release."
 
-# Test with mcptools CLI
-test-mcp: build-executable
-	@echo "🧪 Testing with mcptools CLI..."
-	@echo "📋 Listing available tools:"
-	@mcpt tools node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "🔧 Testing encode_plantuml tool:"
-	@mcpt call encode_plantuml --params '{"plantuml_code":"@startuml\nAlice -> Bob: Hello\n@enduml"}' node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "📊 Testing generate_plantuml_diagram tool:"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Hello\nBob --> Alice: Hi there\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "🔗 Testing generate_plantuml_diagram with !include directive:"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml\n\nPerson(user, \"User\")\nContainer(web, \"Web App\", \"React\", \"User interface\")\nContainer(api, \"API\", \"Node.js\", \"Backend API\")\n\nRel(user, web, \"Uses\")\nRel(web, api, \"Calls\")\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "❌ Testing syntax error validation (auto-fix workflow):"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nBob -> Alice : Hello\nasd\n@enduml","format":"svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "🔓 Testing decode_plantuml tool:"
-	@mcpt call decode_plantuml --params '{"encoded_string":"LOqnQyCm48Lt_GfLKmoEjMJgbDHJ8IacO3gMitHjrCedeJkHlr-KX4AtuxlllRTdWI9rZUefa8lLexw8P7wsji1r-0fogKjbB2wH8CdWqcfp16gPBOkFOR7ZRZirD9-ETWKMB7RSVOo9109X6NBhLnCMJhHfPRqsCsCndVgJDbTSUctUST67d4slpHd1YNceEf1W-GI7_qAGGw_DONfjtbloE7npEr_0_I1vtJwTKcUCZztxoip8fhlX6xZNZ11ZmtiaNzVu2m00"}' node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "📚 Listing available prompts:"
-	@mcpt prompts node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "🔍 Testing plantuml_error_handling prompt:"
-	@mcpt get-prompt plantuml_error_handling -f pretty node $(DIST_DIR)/$(MAIN_FILE).js
-	@echo ""
-	@echo "🔒 Testing output_path security (save to CWD - should succeed):"
-	@rm -f ./test-output-mcp.svg
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test-output-mcp.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js
-	@test -f ./test-output-mcp.svg && echo "✅ File created successfully" || echo "❌ File not created"
-	@rm -f ./test-output-mcp.svg
-	@echo ""
-	@echo "🔒 Testing output_path security (outside CWD - should fail):"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"/tmp/outside-cwd.svg"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Security error" && echo "✅ Path outside CWD correctly rejected" || echo "❌ Security check failed"
-	@echo ""
-	@echo "🔒 Testing output_path security (invalid extension - should fail):"
-	@PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) mcpt call generate_plantuml_diagram --params '{"plantuml_code":"@startuml\nAlice -> Bob: Security Test\n@enduml","format":"svg","output_path":"./test.txt"}' node $(DIST_DIR)/$(MAIN_FILE).js | grep -q "Invalid extension" && echo "✅ Invalid extension correctly rejected" || echo "❌ Extension check failed"
+# Install the official Apify CLI only when it is missing from PATH.
+ensure-mcpc:
+	@if ! command -v mcpc >/dev/null 2>&1; then \
+		command -v npm >/dev/null 2>&1 || { echo "❌ npm is required to install @apify/mcpc."; exit 1; }; \
+		echo "📦 mcpc not found. Installing @apify/mcpc globally..."; \
+		npm install --global --no-audit --no-fund @apify/mcpc || { \
+			echo "❌ Could not install mcpc. Check npm permissions and network access; no sudo is used."; \
+			exit 1; \
+		}; \
+	fi
+	@command -v mcpc >/dev/null 2>&1 || { \
+		echo "❌ mcpc is still not on PATH. Add the npm global bin directory to PATH and retry."; \
+		exit 1; \
+	}
+	@mcpc --version || { echo "❌ mcpc is installed but cannot run. Check its installation and Node.js version."; exit 1; }
+
+# Local MCP integration checks through mcpc; failures return a nonzero exit.
+test-mcpc: ensure-mcpc build-executable
+	node scripts/test-mcpc.mjs
+
+# Backward-compatible name for the integration test.
+test-mcp: test-mcpc
 
 # Setup for Claude Code using CLI command
 setup-claude:
@@ -194,7 +161,7 @@ setup: install init build-executable setup-claude
 	@echo "  make run          - Run the server locally"
 	@echo "  make dev          - Run in development mode (watch)"
 	@echo "  make test         - Test the server"
-	@echo "  make test-mcp     - Test with mcptools CLI"
+	@echo "  make test-mcpc    - Test the local server through mcpc"
 	@echo "  make clean build  - Clean rebuild"
 
 # Show help
@@ -206,8 +173,9 @@ help:
 	@echo "  make run            - Build and run the server"
 	@echo "  make dev            - Run in development mode (watch)"
 	@echo "  make test           - Test the server"
-	@echo "  make test-ci        - Fast CI tests (no external dependencies)"
-	@echo "  make test-mcp       - Test with mcptools CLI"
+	@echo "  make test-ci        - Unit tests and type checks (requires network)"
+	@echo "  make test-mcpc      - Local MCP smoke test (installs missing mcpc; requires network)"
+	@echo "  make test-mcp       - Alias for test-mcpc"
 	@echo "  make test-all       - Run all tests (CI + integration)"
 	@echo "  make release-patch  - Create patch release (0.1.0 → 0.1.1)"
 	@echo "  make release-minor  - Create minor release (0.1.0 → 0.2.0)"
@@ -223,7 +191,7 @@ help:
 	@echo ""
 	@echo "Examples:"
 	@echo "  make run"
-	@echo "  make test-mcp"
-	@echo "  PLANTUML_SERVER_URL=https://your-server.com make test-mcp"
+	@echo "  make test-mcpc"
+	@echo "  NODE_EXTRA_CA_CERTS=/path/to/trusted-ca.pem make test-mcpc"
 
-.PHONY: help install clean build build-executable dev run test test-ci test-mcp test-all release-patch release-minor release-major npm-publish setup-claude init setup check-node
+.PHONY: help install clean build build-executable dev run test test-ci test-mcp test-mcpc test-all release-patch release-minor release-major npm-publish setup-claude init setup check-node ensure-mcpc
